@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 import { MurmurCard } from './MurmurCard'
 import { murmurService, Murmur } from '../services/murmurService'
 import { useAuth } from '../contexts/AuthContext'
+import { useNotification } from '../contexts/NotificationContext'
 
 export const Timeline: React.FC = () => {
   const { isAuthenticated } = useAuth()
+  const { showNotification } = useNotification()
   const [murmurs, setMurmurs] = useState<Murmur[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -38,9 +40,11 @@ export const Timeline: React.FC = () => {
     try {
       await murmurService.create({ text: newMurmur })
       setNewMurmur('')
+      showNotification('success', 'Murmur posted! 🎉', '🎉', 3000)
       loadMurmurs()
     } catch (err) {
       console.error('Error posting murmur:', err)
+      showNotification('error', 'Failed to post murmur. Try again!', '😅', 3000)
     } finally {
       setPosting(false)
     }

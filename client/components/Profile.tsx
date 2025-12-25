@@ -4,11 +4,14 @@ import { userService, User } from '../services/userService'
 import { murmurService, Murmur } from '../services/murmurService'
 import { followService } from '../services/followService'
 import { MurmurCard } from './MurmurCard'
+import { ConfirmationDialog } from './ConfirmationDialog'
 import { useAuth } from '../contexts/AuthContext'
+import { useNotification } from '../contexts/NotificationContext'
 
 export const Profile: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const { user: currentUser, isAuthenticated } = useAuth()
+  const { showNotification } = useNotification()
   const [user, setUser] = useState<User | null>(null)
   const [murmurs, setMurmurs] = useState<Murmur[]>([])
   const [loading, setLoading] = useState(true)
@@ -18,6 +21,11 @@ export const Profile: React.FC = () => {
   const [isOwnProfile, setIsOwnProfile] = useState(false)
   const [newMurmur, setNewMurmur] = useState('')
   const [posting, setPosting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean
+    murmurId: number | null
+  }>({ isOpen: false, murmurId: null })
+  const [unfollowConfirm, setUnfollowConfirm] = useState(false)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -56,12 +64,17 @@ export const Profile: React.FC = () => {
 
   const handleFollow = async () => {
     if (!user) return
+
+    // If unfollowing, show confirmation
+    if (following) {
+      setUnfollowConfirm(true)
+      return
+    }
+
+    // Direct follow (no confirmation needed)
     try {
-      if (following) {
-        await followService.unfollow(user.id)
-      } else {
-        await followService.follow(user.id)
-      }
+      await followService.follow(user.id)
+      showNotification('success', `Now following ${user.name}! 🎉`, '🎉', 3000)
       // Refresh user data to get accurate counts
       const updatedUser = await userService.getById(user.id)
       setUser(updatedUser)
@@ -69,7 +82,33 @@ export const Profile: React.FC = () => {
       setFollowing(followStatus)
     } catch (err: any) {
       console.error('Error toggling follow:', err)
+      showNotification('error', 'Failed to update follow status', '😅', 3000)
       // Sync state on error
+      if (user) {
+        try {
+          const followStatus = await followService.getFollowStatus(user.id)
+          setFollowing(followStatus)
+        } catch (syncErr) {
+          // Ignore sync errors
+        }
+      }
+    }
+  }
+
+  const confirmUnfollow = async () => {
+    if (!user) return
+    setUnfollowConfirm(false)
+    try {
+      await followService.unfollow(user.id)
+      showNotification('info', `Unfollowed ${user.name}`, '👋', 2500)
+      // Refresh user data to get accurate counts
+      const updatedUser = await userService.getById(user.id)
+      setUser(updatedUser)
+      const followStatus = await followService.getFollowStatus(user.id)
+      setFollowing(followStatus)
+    } catch (err: any) {
+      console.error('Error toggling follow:', err)
+      showNotification('error', 'Failed to update follow status', '😅', 3000)
       if (user) {
         try {
           const followStatus = await followService.getFollowStatus(user.id)
@@ -87,6 +126,7 @@ export const Profile: React.FC = () => {
     try {
       await murmurService.create({ text: newMurmur })
       setNewMurmur('')
+      showNotification('success', 'Murmur posted! 🎉', '🎉', 3000)
       // Reload murmurs to show the new post
       const userId = id ? parseInt(id) : currentUser?.id || 0
       const murmursResponse = await murmurService.getByUserId(userId, page, 10)
@@ -94,18 +134,29 @@ export const Profile: React.FC = () => {
       setTotal(murmursResponse.total)
     } catch (err) {
       console.error('Error posting murmur:', err)
+      showNotification('error', 'Failed to post murmur. Try again!', '😅', 3000)
     } finally {
       setPosting(false)
     }
   }
 
-  const handleDelete = async (murmurId: number) => {
+  const handleDeleteClick = (murmurId: number) => {
+    setDeleteConfirm({ isOpen: true, murmurId })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.murmurId) return
+    const murmurId = deleteConfirm.murmurId
+    setDeleteConfirm({ isOpen: false, murmurId: null })
+
     try {
       await murmurService.delete(murmurId)
       setMurmurs(murmurs.filter((m) => m.id !== murmurId))
       setTotal(total - 1)
+      showNotification('info', 'Murmur deleted! 🗑️', '🗑️', 2500)
     } catch (err) {
       console.error('Error deleting murmur:', err)
+      showNotification('error', 'Failed to delete murmur', '😅', 3000)
     }
   }
 
@@ -132,6 +183,28 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="container">
+      <ConfirmationDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Murmur?"
+        message="Are you sure you want to delete this murmur? This action cannot be undone."
+        emoji="🗑️"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, murmurId: null })}
+      />
+      <ConfirmationDialog
+        isOpen={unfollowConfirm}
+        title="Unfollow User?"
+        message={`Are you sure you want to unfollow ${user?.name}? You will no longer see their posts in your timeline.`}
+        emoji="👋"
+        confirmText="Unfollow"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={confirmUnfollow}
+        onCancel={() => setUnfollowConfirm(false)}
+      />
       <div className="card profile-header">
         <div className="profile-info">
           <h2>{user.name}</h2>
@@ -191,7 +264,7 @@ export const Profile: React.FC = () => {
               key={murmur.id}
               murmur={murmur}
               showDelete={isOwnProfile}
-              onDelete={() => handleDelete(murmur.id)}
+              onDelete={() => handleDeleteClick(murmur.id)}
             />
           ))}
           <div className="pagination">

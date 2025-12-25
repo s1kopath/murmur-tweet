@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { userService, User } from '../services/userService'
 import { followService } from '../services/followService'
+import { ConfirmationDialog } from './ConfirmationDialog'
 import { useAuth } from '../contexts/AuthContext'
+import { useNotification } from '../contexts/NotificationContext'
 
 export const DiscoverUsers: React.FC = () => {
   const { user: currentUser, isAuthenticated } = useAuth()
+  const { showNotification } = useNotification()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [followingStatus, setFollowingStatus] = useState<{
@@ -15,6 +18,11 @@ export const DiscoverUsers: React.FC = () => {
     [userId: number]: boolean
   }>({})
   const [error, setError] = useState<string | null>(null)
+  const [unfollowConfirm, setUnfollowConfirm] = useState<{
+    isOpen: boolean
+    userId: number | null
+    userName: string | null
+  }>({ isOpen: false, userId: null, userName: null })
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -63,19 +71,34 @@ export const DiscoverUsers: React.FC = () => {
   const handleFollow = async (userId: number) => {
     if (!isAuthenticated) return
 
+    const isFollowing = followingStatus[userId]
+    const user = users.find((u) => u.id === userId)
+
+    // If unfollowing, show confirmation
+    if (isFollowing) {
+      setUnfollowConfirm({
+        isOpen: true,
+        userId,
+        userName: user?.name || 'user',
+      })
+      return
+    }
+
+    // Direct follow (no confirmation needed)
     setLoadingFollow({ ...loadingFollow, [userId]: true })
     try {
-      const isFollowing = followingStatus[userId]
-      if (isFollowing) {
-        await followService.unfollow(userId)
-      } else {
-        await followService.follow(userId)
-      }
+      await followService.follow(userId)
+      showNotification(
+        'success',
+        `Now following ${user?.name || 'user'}! 🎉`,
+        '🎉',
+        3000,
+      )
 
       // Update status
       setFollowingStatus({
         ...followingStatus,
-        [userId]: !isFollowing,
+        [userId]: true,
       })
 
       // Update user's follower count in the list
@@ -84,9 +107,7 @@ export const DiscoverUsers: React.FC = () => {
           if (u.id === userId) {
             return {
               ...u,
-              followers_count: isFollowing
-                ? u.followers_count - 1
-                : u.followers_count + 1,
+              followers_count: u.followers_count + 1,
             }
           }
           return u
@@ -94,6 +115,51 @@ export const DiscoverUsers: React.FC = () => {
       )
     } catch (err: any) {
       console.error('Error toggling follow:', err)
+      showNotification('error', 'Failed to update follow status', '😅', 3000)
+      // Sync status on error
+      try {
+        const followStatus = await followService.getFollowStatus(userId)
+        setFollowingStatus({ ...followingStatus, [userId]: followStatus })
+      } catch (syncErr) {
+        // Ignore sync errors
+      }
+    } finally {
+      setLoadingFollow({ ...loadingFollow, [userId]: false })
+    }
+  }
+
+  const confirmUnfollow = async () => {
+    if (!unfollowConfirm.userId) return
+    const userId = unfollowConfirm.userId
+    const userName = unfollowConfirm.userName
+    setUnfollowConfirm({ isOpen: false, userId: null, userName: null })
+
+    setLoadingFollow({ ...loadingFollow, [userId]: true })
+    try {
+      await followService.unfollow(userId)
+      showNotification('info', `Unfollowed ${userName}`, '👋', 2500)
+
+      // Update status
+      setFollowingStatus({
+        ...followingStatus,
+        [userId]: false,
+      })
+
+      // Update user's follower count in the list
+      setUsers(
+        users.map((u) => {
+          if (u.id === userId) {
+            return {
+              ...u,
+              followers_count: u.followers_count - 1,
+            }
+          }
+          return u
+        }),
+      )
+    } catch (err: any) {
+      console.error('Error toggling follow:', err)
+      showNotification('error', 'Failed to update follow status', '😅', 3000)
       // Sync status on error
       try {
         const followStatus = await followService.getFollowStatus(userId)
@@ -131,6 +197,19 @@ export const DiscoverUsers: React.FC = () => {
 
   return (
     <div className="container">
+      <ConfirmationDialog
+        isOpen={unfollowConfirm.isOpen}
+        title="Unfollow User?"
+        message={`Are you sure you want to unfollow ${unfollowConfirm.userName}? You will no longer see their posts in your timeline.`}
+        emoji="👋"
+        confirmText="Unfollow"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={confirmUnfollow}
+        onCancel={() =>
+          setUnfollowConfirm({ isOpen: false, userId: null, userName: null })
+        }
+      />
       <h1>Discover Users</h1>
       <p className="text-secondary mb-3">
         Follow users to see their murmurs in your timeline

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Murmur } from '../services/murmurService'
 import { likeService } from '../services/likeService'
 import { useAuth } from '../contexts/AuthContext'
+import { useNotification } from '../contexts/NotificationContext'
 import './MurmurCard.css'
 
 interface MurmurCardProps {
@@ -17,6 +18,7 @@ export const MurmurCard: React.FC<MurmurCardProps> = ({
   onDelete,
 }) => {
   const { isAuthenticated } = useAuth()
+  const { showNotification } = useNotification()
   const [liked, setLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(murmur.likes_count)
   const [loading, setLoading] = useState(false)
@@ -54,16 +56,19 @@ export const MurmurCard: React.FC<MurmurCardProps> = ({
         setLiked(false)
         setLikesCount(likesCount - 1)
         await likeService.unlike(murmur.id)
+        showNotification('info', 'Unliked! 💔', '💔', 2000)
       } else {
         setLiked(true)
         setLikesCount(likesCount + 1)
         await likeService.like(murmur.id)
+        showNotification('success', 'Loved it! ❤️', '❤️', 2000)
       }
     } catch (err: any) {
       console.error('Error toggling like:', err)
       // Revert optimistic update on error
       setLiked(previousLiked)
       setLikesCount(previousCount)
+      showNotification('error', 'Oops! Something went wrong', '😅', 3000)
     } finally {
       setLoading(false)
     }
