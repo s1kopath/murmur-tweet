@@ -7,14 +7,12 @@ import './MurmurCard.css'
 
 interface MurmurCardProps {
   murmur: Murmur
-  onLikeChange?: () => void
   showDelete?: boolean
   onDelete?: () => void
 }
 
 export const MurmurCard: React.FC<MurmurCardProps> = ({
   murmur,
-  onLikeChange,
   showDelete = false,
   onDelete,
 }) => {
@@ -46,22 +44,26 @@ export const MurmurCard: React.FC<MurmurCardProps> = ({
   const handleLike = async () => {
     if (!isAuthenticated) return
     setLoading(true)
+
+    // Optimistic update
+    const previousLiked = liked
+    const previousCount = likesCount
+
     try {
       if (liked) {
-        await likeService.unlike(murmur.id)
         setLiked(false)
         setLikesCount(likesCount - 1)
+        await likeService.unlike(murmur.id)
       } else {
-        await likeService.like(murmur.id)
         setLiked(true)
         setLikesCount(likesCount + 1)
+        await likeService.like(murmur.id)
       }
-      if (onLikeChange) onLikeChange()
     } catch (err: any) {
       console.error('Error toggling like:', err)
-      if (err.response?.status === 400) {
-        if (onLikeChange) onLikeChange()
-      }
+      // Revert optimistic update on error
+      setLiked(previousLiked)
+      setLikesCount(previousCount)
     } finally {
       setLoading(false)
     }

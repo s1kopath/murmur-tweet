@@ -18,10 +18,12 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const murmur_entity_1 = require("../entities/murmur.entity");
 const follow_entity_1 = require("../entities/follow.entity");
+const like_entity_1 = require("../entities/like.entity");
 let MurmursService = class MurmursService {
-    constructor(murmursRepository, followsRepository) {
+    constructor(murmursRepository, followsRepository, likesRepository) {
         this.murmursRepository = murmursRepository;
         this.followsRepository = followsRepository;
+        this.likesRepository = likesRepository;
     }
     async create(userId, createMurmurDto) {
         const murmur = this.murmursRepository.create({
@@ -66,6 +68,7 @@ let MurmursService = class MurmursService {
         if (murmur.user_id !== userId) {
             throw new common_1.ForbiddenException("You can only delete your own murmurs");
         }
+        await this.likesRepository.delete({ murmur_id: id });
         await this.murmursRepository.remove(murmur);
     }
     async getTimeline(userId, page = 1, limit = 10) {
@@ -75,9 +78,7 @@ let MurmursService = class MurmursService {
             select: ["following_id"],
         });
         const followingIds = follows.map((f) => f.following_id);
-        if (followingIds.length === 0) {
-            return { data: [], total: 0, page, limit };
-        }
+        followingIds.push(userId);
         const queryBuilder = this.murmursRepository
             .createQueryBuilder("murmur")
             .leftJoinAndSelect("murmur.user", "user")
@@ -94,7 +95,9 @@ exports.MurmursService = MurmursService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(murmur_entity_1.Murmur)),
     __param(1, (0, typeorm_1.InjectRepository)(follow_entity_1.Follow)),
+    __param(2, (0, typeorm_1.InjectRepository)(like_entity_1.Like)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], MurmursService);
 //# sourceMappingURL=murmurs.service.js.map

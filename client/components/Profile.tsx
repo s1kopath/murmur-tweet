@@ -16,6 +16,8 @@ export const Profile: React.FC = () => {
   const [total, setTotal] = useState(0)
   const [following, setFollowing] = useState(false)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
+  const [newMurmur, setNewMurmur] = useState('')
+  const [posting, setPosting] = useState(false)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -79,10 +81,29 @@ export const Profile: React.FC = () => {
     }
   }
 
+  const handlePost = async () => {
+    if (!newMurmur.trim() || !isAuthenticated || !isOwnProfile) return
+    setPosting(true)
+    try {
+      await murmurService.create({ text: newMurmur })
+      setNewMurmur('')
+      // Reload murmurs to show the new post
+      const userId = id ? parseInt(id) : currentUser?.id || 0
+      const murmursResponse = await murmurService.getByUserId(userId, page, 10)
+      setMurmurs(murmursResponse.data)
+      setTotal(murmursResponse.total)
+    } catch (err) {
+      console.error('Error posting murmur:', err)
+    } finally {
+      setPosting(false)
+    }
+  }
+
   const handleDelete = async (murmurId: number) => {
     try {
       await murmurService.delete(murmurId)
       setMurmurs(murmurs.filter((m) => m.id !== murmurId))
+      setTotal(total - 1)
     } catch (err) {
       console.error('Error deleting murmur:', err)
     }
@@ -136,6 +157,28 @@ export const Profile: React.FC = () => {
           </button>
         )}
       </div>
+      {isOwnProfile && isAuthenticated && (
+        <div className="card mt-3">
+          <textarea
+            className="form-textarea"
+            value={newMurmur}
+            onChange={(e) => setNewMurmur(e.target.value)}
+            placeholder="What's on your mind?"
+            maxLength={280}
+            rows={4}
+          />
+          <div className="flex-between mt-2">
+            <span className="text-small">{newMurmur.length}/280</span>
+            <button
+              onClick={handlePost}
+              disabled={posting || !newMurmur.trim()}
+              className="btn btn-primary"
+            >
+              {posting ? 'Posting...' : 'Post Murmur'}
+            </button>
+          </div>
+        </div>
+      )}
       <h3 className="mt-3">Murmurs</h3>
       {murmurs.length === 0 ? (
         <div className="empty-state">

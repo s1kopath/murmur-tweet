@@ -84,7 +84,7 @@ export const Timeline: React.FC = () => {
           </h3>
           <p>
             {isAuthenticated
-              ? 'Follow users to see their posts in your timeline!'
+              ? 'Start posting or follow users to see their posts in your timeline!'
               : 'Be the first to post a murmur!'}
           </p>
           {isAuthenticated && (
@@ -96,11 +96,7 @@ export const Timeline: React.FC = () => {
       ) : (
         <>
           {murmurs.map((murmur) => (
-            <MurmurCard
-              key={murmur.id}
-              murmur={murmur}
-              onLikeChange={loadMurmurs}
-            />
+            <MurmurCard key={murmur.id} murmur={murmur} />
           ))}
           <div className="pagination">
             <button onClick={() => setPage(page - 1)} disabled={page === 1}>
