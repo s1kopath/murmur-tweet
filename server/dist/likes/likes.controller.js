@@ -20,6 +20,10 @@ let LikesController = class LikesController {
     constructor(likesService) {
         this.likesService = likesService;
     }
+    async getLikeStatus(id, req) {
+        const isLiked = await this.likesService.isLiked(req.user.userId, id);
+        return { isLiked };
+    }
     async like(id, req) {
         await this.likesService.like(req.user.userId, id);
         return { message: 'Successfully liked murmur' };
@@ -30,6 +34,15 @@ let LikesController = class LikesController {
     }
 };
 exports.LikesController = LikesController;
+__decorate([
+    (0, common_1.Get)('murmurs/:id/status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], LikesController.prototype, "getLikeStatus", null);
 __decorate([
     (0, common_1.Post)('murmurs/:id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

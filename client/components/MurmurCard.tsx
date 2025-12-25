@@ -29,9 +29,14 @@ export const MurmurCard: React.FC<MurmurCardProps> = ({
         try {
           const isLiked = await likeService.getLikeStatus(murmur.id)
           setLiked(isLiked)
-        } catch (err) {
-          // If user is not authenticated or error occurs, keep default state
-          console.error('Error checking like status:', err)
+        } catch (err: any) {
+          // If endpoint doesn't exist or error occurs, silently fail and keep default state
+          // This allows the app to work even if the status endpoint isn't available yet
+          if (err.response?.status !== 404) {
+            console.error('Error checking like status:', err)
+          }
+          // Default to false if status check fails
+          setLiked(false)
         }
       }
     }

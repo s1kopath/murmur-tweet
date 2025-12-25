@@ -33,8 +33,8 @@ let MurmursService = class MurmursService {
     async findAll(page = 1, limit = 10) {
         const skip = (page - 1) * limit;
         const [data, total] = await this.murmursRepository.findAndCount({
-            relations: ['user'],
-            order: { created_at: 'DESC' },
+            relations: ["user"],
+            order: { created_at: "DESC" },
             skip,
             take: limit,
         });
@@ -43,7 +43,7 @@ let MurmursService = class MurmursService {
     async findOne(id) {
         const murmur = await this.murmursRepository.findOne({
             where: { id },
-            relations: ['user'],
+            relations: ["user"],
         });
         if (!murmur) {
             throw new common_1.NotFoundException(`Murmur with ID ${id} not found`);
@@ -54,8 +54,8 @@ let MurmursService = class MurmursService {
         const skip = (page - 1) * limit;
         const [data, total] = await this.murmursRepository.findAndCount({
             where: { user_id: userId },
-            relations: ['user'],
-            order: { created_at: 'DESC' },
+            relations: ["user"],
+            order: { created_at: "DESC" },
             skip,
             take: limit,
         });
@@ -64,7 +64,7 @@ let MurmursService = class MurmursService {
     async remove(id, userId) {
         const murmur = await this.findOne(id);
         if (murmur.user_id !== userId) {
-            throw new common_1.ForbiddenException('You can only delete your own murmurs');
+            throw new common_1.ForbiddenException("You can only delete your own murmurs");
         }
         await this.murmursRepository.remove(murmur);
     }
@@ -72,15 +72,17 @@ let MurmursService = class MurmursService {
         const skip = (page - 1) * limit;
         const follows = await this.followsRepository.find({
             where: { follower_id: userId },
-            select: ['following_id'],
+            select: ["following_id"],
         });
-        const followingIds = follows.map(f => f.following_id);
-        followingIds.push(userId);
+        const followingIds = follows.map((f) => f.following_id);
+        if (followingIds.length === 0) {
+            return { data: [], total: 0, page, limit };
+        }
         const queryBuilder = this.murmursRepository
-            .createQueryBuilder('murmur')
-            .leftJoinAndSelect('murmur.user', 'user')
-            .where('murmur.user_id IN (:...ids)', { ids: followingIds })
-            .orderBy('murmur.created_at', 'DESC')
+            .createQueryBuilder("murmur")
+            .leftJoinAndSelect("murmur.user", "user")
+            .where("murmur.user_id IN (:...ids)", { ids: followingIds })
+            .orderBy("murmur.created_at", "DESC")
             .skip(skip)
             .take(limit);
         const [data, total] = await queryBuilder.getManyAndCount();
