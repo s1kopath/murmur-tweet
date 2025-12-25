@@ -91,7 +91,7 @@ If you want to add new function after complete to implement below function, it's
 
 ### Directory structure
 
-- /src -> Frontend (React)
+- /client -> Frontend (React)
 - /server -> Backend (NestJS)
 - /db -> Database (MySQL 8.x)
 
@@ -110,7 +110,7 @@ The ability to build a development environment is also the subject of this test,
 1. npm run start:dev
 
 #### Client
-1. cd src && yarn install
+1. cd client && yarn install
 1. yarn dev
 
 
