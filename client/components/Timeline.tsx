@@ -49,65 +49,47 @@ export const Timeline: React.FC = () => {
   const totalPages = Math.ceil(total / 10)
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+    <div className="container">
       <h1>Timeline</h1>
       {isAuthenticated && (
-        <div
-          style={{
-            marginBottom: '20px',
-            padding: '15px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-          }}
-        >
+        <div className="card">
           <textarea
+            className="form-textarea"
             value={newMurmur}
             onChange={(e) => setNewMurmur(e.target.value)}
             placeholder="What's happening?"
             maxLength={280}
-            rows={3}
-            style={{
-              width: '100%',
-              padding: '8px',
-              boxSizing: 'border-box',
-              marginBottom: '10px',
-            }}
+            rows={4}
           />
-          <button
-            onClick={handlePost}
-            disabled={posting || !newMurmur.trim()}
-            style={{
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              cursor: posting ? 'not-allowed' : 'pointer',
-              borderRadius: '4px',
-            }}
-          >
-            {posting ? 'Posting...' : 'Post Murmur'}
-          </button>
+          <div className="flex-between mt-2">
+            <span className="text-small">{newMurmur.length}/280</span>
+            <button
+              onClick={handlePost}
+              disabled={posting || !newMurmur.trim()}
+              className="btn btn-primary"
+            >
+              {posting ? 'Posting...' : 'Post Murmur'}
+            </button>
+          </div>
         </div>
       )}
       {loading ? (
-        <div>Loading...</div>
+        <div className="spinner"></div>
       ) : murmurs.length === 0 ? (
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p style={{ fontSize: '1.1em', marginBottom: '10px' }}>
+        <div className="empty-state">
+          <h3>
             {isAuthenticated
-              ? 'No murmurs in your timeline yet. Follow users to see their posts!'
+              ? 'No murmurs in your timeline yet'
               : 'No murmurs found'}
+          </h3>
+          <p>
+            {isAuthenticated
+              ? 'Follow users to see their posts in your timeline!'
+              : 'Be the first to post a murmur!'}
           </p>
           {isAuthenticated && (
-            <Link
-              to="/discover"
-              style={{
-                color: '#007bff',
-                textDecoration: 'none',
-                fontWeight: 'bold',
-              }}
-            >
-              Discover Users →
+            <Link to="/discover" className="btn btn-primary">
+              Discover Users
             </Link>
           )}
         </div>
@@ -120,33 +102,16 @@ export const Timeline: React.FC = () => {
               onLikeChange={loadMurmurs}
             />
           ))}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '20px',
-            }}
-          >
-            <button
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-              style={{
-                padding: '8px 16px',
-                cursor: page === 1 ? 'not-allowed' : 'pointer',
-              }}
-            >
+          <div className="pagination">
+            <button onClick={() => setPage(page - 1)} disabled={page === 1}>
               Previous
             </button>
-            <span>
+            <span className="text-small">
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages}
-              style={{
-                padding: '8px 16px',
-                cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-              }}
             >
               Next
             </button>

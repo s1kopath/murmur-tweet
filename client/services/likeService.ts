@@ -9,8 +9,8 @@ export const likeService = {
     await api.delete(`/likes/murmurs/${murmurId}`);
   },
 
-  getUserLikedMurmurs: async (): Promise<number[]> => {
-    // This would require a backend endpoint, for now we'll handle it client-side
-    return [];
+  getLikeStatus: async (murmurId: number): Promise<boolean> => {
+    const response = await api.get(`/likes/murmurs/${murmurId}/status`);
+    return response.data.isLiked;
   },
 };

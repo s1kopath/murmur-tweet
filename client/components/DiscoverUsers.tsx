@@ -108,84 +108,71 @@ export const DiscoverUsers: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-        <h1>Discover Users</h1>
-        <p>Please log in to discover and follow other users.</p>
+      <div className="container">
+        <div className="empty-state">
+          <h3>Discover Users</h3>
+          <p>Please log in to discover and follow other users.</p>
+          <Link to="/login" className="btn btn-primary mt-2">
+            Login
+          </Link>
+        </div>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+      <div className="container">
         <h1>Discover Users</h1>
-        <div>Loading users...</div>
+        <div className="spinner"></div>
       </div>
     )
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
+    <div className="container">
       <h1>Discover Users</h1>
-      <p style={{ marginBottom: '20px', color: '#666' }}>
+      <p className="text-secondary mb-3">
         Follow users to see their murmurs in your timeline
       </p>
+      {error && (
+        <div
+          className="card"
+          style={{ backgroundColor: '#fee', borderColor: '#fcc' }}
+        >
+          <p className="error-message">{error}</p>
+        </div>
+      )}
       {users.length === 0 ? (
-        <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-          <p style={{ fontSize: '1.1em', marginBottom: '10px' }}>
-            No other users found.
+        <div className="empty-state">
+          <p>No other users found.</p>
+          <p className="text-secondary text-small mt-1">
+            Register new accounts to follow other users, or ask others to
+            register and join the platform.
           </p>
         </div>
       ) : (
         <div>
           {users.map((user) => (
-            <div
-              key={user.id}
-              style={{
-                border: '1px solid #ddd',
-                padding: '15px',
-                marginBottom: '15px',
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <Link
-                  to={`/users/${user.id}`}
-                  style={{
-                    textDecoration: 'none',
-                    color: '#007bff',
-                    fontWeight: 'bold',
-                  }}
-                >
+            <div key={user.id} className="card user-card">
+              <div className="user-info">
+                <Link to={`/users/${user.id}`} className="user-link">
                   <h3 style={{ margin: 0 }}>{user.name}</h3>
-                  <p style={{ margin: '5px 0', color: '#666' }}>
+                  <p className="text-secondary text-small mt-1">
                     @{user.username}
                   </p>
                 </Link>
-                <p
-                  style={{ margin: '5px 0', fontSize: '0.9em', color: '#888' }}
-                >
-                  {user.followers_count} followers · {user.following_count}{' '}
-                  following
+                <p className="text-small mt-2">
+                  <strong>{user.followers_count}</strong> followers ·{' '}
+                  <strong>{user.following_count}</strong> following
                 </p>
               </div>
               <button
                 onClick={() => handleFollow(user.id)}
                 disabled={loadingFollow[user.id]}
-                style={{
-                  backgroundColor: followingStatus[user.id]
-                    ? '#6c757d'
-                    : '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  cursor: loadingFollow[user.id] ? 'not-allowed' : 'pointer',
-                  borderRadius: '4px',
-                  minWidth: '100px',
-                }}
+                className={`btn btn-sm ${
+                  followingStatus[user.id] ? 'btn-secondary' : 'btn-primary'
+                }`}
               >
                 {loadingFollow[user.id]
                   ? '...'

@@ -91,48 +91,56 @@ export const Profile: React.FC = () => {
   const totalPages = Math.ceil(total / 10)
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="container">
+        <div className="spinner"></div>
+      </div>
+    )
   }
 
   if (!user) {
-    return <div>User not found</div>
+    return (
+      <div className="container">
+        <div className="empty-state">
+          <h3>User not found</h3>
+          <p>The user you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
-      <div
-        style={{
-          marginBottom: '20px',
-          padding: '15px',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-        }}
-      >
-        <h2>{user.name}</h2>
-        <p>@{user.username}</p>
-        <p>Email: {user.email}</p>
-        <p>
-          Followers: {user.followers_count} | Following: {user.following_count}
-        </p>
+    <div className="container">
+      <div className="card profile-header">
+        <div className="profile-info">
+          <h2>{user.name}</h2>
+          <p className="text-secondary">@{user.username}</p>
+          <p className="text-secondary text-small mt-1">{user.email}</p>
+          <div className="profile-stats mt-2">
+            <span>
+              <strong>{user.followers_count}</strong>{' '}
+              <span className="text-secondary">Followers</span>
+            </span>
+            <span>
+              <strong>{user.following_count}</strong>{' '}
+              <span className="text-secondary">Following</span>
+            </span>
+          </div>
+        </div>
         {isAuthenticated && !isOwnProfile && (
           <button
             onClick={handleFollow}
-            style={{
-              backgroundColor: following ? '#6c757d' : '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              borderRadius: '4px',
-            }}
+            className={`btn ${following ? 'btn-secondary' : 'btn-primary'}`}
           >
             {following ? 'Unfollow' : 'Follow'}
           </button>
         )}
       </div>
-      <h3>Murmurs</h3>
+      <h3 className="mt-3">Murmurs</h3>
       {murmurs.length === 0 ? (
-        <div>No murmurs found</div>
+        <div className="empty-state">
+          <p>No murmurs found</p>
+        </div>
       ) : (
         <>
           {murmurs.map((murmur) => (
@@ -143,33 +151,16 @@ export const Profile: React.FC = () => {
               onDelete={() => handleDelete(murmur.id)}
             />
           ))}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '20px',
-            }}
-          >
-            <button
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-              style={{
-                padding: '8px 16px',
-                cursor: page === 1 ? 'not-allowed' : 'pointer',
-              }}
-            >
+          <div className="pagination">
+            <button onClick={() => setPage(page - 1)} disabled={page === 1}>
               Previous
             </button>
-            <span>
+            <span className="text-small">
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages}
-              style={{
-                padding: '8px 16px',
-                cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-              }}
             >
               Next
             </button>

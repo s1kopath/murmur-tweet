@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Delete,
   Param,
@@ -26,6 +27,13 @@ export class LikesController {
   async unlike(@Param('id', ParseIntPipe) id: number, @Request() req) {
     await this.likesService.unlike(req.user.userId, id);
     return { message: 'Successfully unliked murmur' };
+  }
+
+  @Get('murmurs/:id/status')
+  @UseGuards(JwtAuthGuard)
+  async getLikeStatus(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    const isLiked = await this.likesService.isLiked(req.user.userId, id);
+    return { isLiked };
   }
 }
 
