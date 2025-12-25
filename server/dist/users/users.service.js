@@ -26,12 +26,24 @@ let UsersService = class UsersService {
         return this.usersRepository.save(user);
     }
     async findAll() {
-        return this.usersRepository.find();
+        const users = await this.usersRepository
+            .createQueryBuilder("user")
+            .select([
+            "user.id",
+            "user.username",
+            "user.name",
+            "user.email",
+            "user.created_at",
+            "user.followers_count",
+            "user.following_count",
+        ])
+            .getMany();
+        return users;
     }
     async findOne(id) {
         const user = await this.usersRepository.findOne({
             where: { id },
-            relations: ['murmurs'],
+            relations: ["murmurs"],
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with ID ${id} not found`);
@@ -47,7 +59,7 @@ let UsersService = class UsersService {
     async getProfile(id) {
         const user = await this.usersRepository.findOne({
             where: { id },
-            relations: ['murmurs'],
+            relations: ["murmurs"],
         });
         if (!user) {
             throw new common_1.NotFoundException(`User with ID ${id} not found`);

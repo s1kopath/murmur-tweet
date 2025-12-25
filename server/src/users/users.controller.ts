@@ -1,22 +1,34 @@
-import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Request,
+  ParseIntPipe,
+} from "@nestjs/common";
+import { UsersService } from "./users.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
-@Controller('users')
+@Controller("users")
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Get('me')
+  @Get("me")
   @UseGuards(JwtAuthGuard)
   async getMe(@Request() req) {
     return this.usersService.getProfile(req.user.userId);
   }
 
-  @Get(':id')
-  async getProfile(@Param('id') id: number) {
+  @Get("all")
+  @UseGuards(JwtAuthGuard)
+  async getAll() {
+    return this.usersService.findAll();
+  }
+
+  @Get(":id")
+  async getProfile(@Param("id", ParseIntPipe) id: number) {
     const user = await this.usersService.getProfile(id);
     const { password, ...profile } = user;
     return profile;
   }
 }
-

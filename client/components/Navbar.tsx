@@ -1,15 +1,37 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 export const Navbar: React.FC = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth()
 
   return (
-    <nav style={{ borderBottom: '1px solid #ddd', padding: '15px', marginBottom: '20px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <nav
+      style={{
+        borderBottom: '1px solid #ddd',
+        padding: '15px',
+        marginBottom: '20px',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <div>
-          <Link to="/timeline" style={{ textDecoration: 'none', color: '#007bff', fontSize: '1.5em', fontWeight: 'bold' }}>
+          <Link
+            to="/timeline"
+            style={{
+              textDecoration: 'none',
+              color: '#007bff',
+              fontSize: '1.5em',
+              fontWeight: 'bold',
+            }}
+          >
             Murmur
           </Link>
         </div>
@@ -17,6 +39,7 @@ export const Navbar: React.FC = () => {
           {isAuthenticated ? (
             <>
               <Link to="/timeline">Timeline</Link>
+              <Link to="/discover">Discover Users</Link>
               <Link to={`/users/${user?.id}`}>My Profile</Link>
               <span>Welcome, {user?.name}</span>
               <button
@@ -42,6 +65,5 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
     </nav>
-  );
-};
-
+  )
+}

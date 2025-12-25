@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Murmur } from '../entities/murmur.entity';
-import { Follow } from '../entities/follow.entity';
-import { CreateMurmurDto } from './dto/create-murmur.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Murmur } from "../entities/murmur.entity";
+import { Follow } from "../entities/follow.entity";
+import { CreateMurmurDto } from "./dto/create-murmur.dto";
 
 @Injectable()
 export class MurmursService {
@@ -11,10 +15,13 @@ export class MurmursService {
     @InjectRepository(Murmur)
     private murmursRepository: Repository<Murmur>,
     @InjectRepository(Follow)
-    private followsRepository: Repository<Follow>,
+    private followsRepository: Repository<Follow>
   ) {}
 
-  async create(userId: number, createMurmurDto: CreateMurmurDto): Promise<Murmur> {
+  async create(
+    userId: number,
+    createMurmurDto: CreateMurmurDto
+  ): Promise<Murmur> {
     const murmur = this.murmursRepository.create({
       ...createMurmurDto,
       user_id: userId,
@@ -22,11 +29,14 @@ export class MurmursService {
     return this.murmursRepository.save(murmur);
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<{ data: Murmur[]; total: number; page: number; limit: number }> {
+  async findAll(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: Murmur[]; total: number; page: number; limit: number }> {
     const skip = (page - 1) * limit;
     const [data, total] = await this.murmursRepository.findAndCount({
-      relations: ['user'],
-      order: { created_at: 'DESC' },
+      relations: ["user"],
+      order: { created_at: "DESC" },
       skip,
       take: limit,
     });
@@ -36,7 +46,7 @@ export class MurmursService {
   async findOne(id: number): Promise<Murmur> {
     const murmur = await this.murmursRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ["user"],
     });
     if (!murmur) {
       throw new NotFoundException(`Murmur with ID ${id} not found`);
@@ -44,12 +54,16 @@ export class MurmursService {
     return murmur;
   }
 
-  async findByUserId(userId: number, page: number = 1, limit: number = 10): Promise<{ data: Murmur[]; total: number; page: number; limit: number }> {
+  async findByUserId(
+    userId: number,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: Murmur[]; total: number; page: number; limit: number }> {
     const skip = (page - 1) * limit;
     const [data, total] = await this.murmursRepository.findAndCount({
       where: { user_id: userId },
-      relations: ['user'],
-      order: { created_at: 'DESC' },
+      relations: ["user"],
+      order: { created_at: "DESC" },
       skip,
       take: limit,
     });
@@ -59,33 +73,40 @@ export class MurmursService {
   async remove(id: number, userId: number): Promise<void> {
     const murmur = await this.findOne(id);
     if (murmur.user_id !== userId) {
-      throw new ForbiddenException('You can only delete your own murmurs');
+      throw new ForbiddenException("You can only delete your own murmurs");
     }
     await this.murmursRepository.remove(murmur);
   }
 
-  async getTimeline(userId: number, page: number = 1, limit: number = 10): Promise<{ data: Murmur[]; total: number; page: number; limit: number }> {
+  async getTimeline(
+    userId: number,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: Murmur[]; total: number; page: number; limit: number }> {
     const skip = (page - 1) * limit;
-    
-    // Get IDs of users being followed
+
+    // Get IDs of users being followed (only other users, not own posts)
     const follows = await this.followsRepository.find({
       where: { follower_id: userId },
-      select: ['following_id'],
+      select: ["following_id"],
     });
-    const followingIds = follows.map(f => f.following_id);
-    followingIds.push(userId); // Include own murmurs
-    
+    const followingIds = follows.map((f) => f.following_id);
+
+    // If user follows no one, return empty result
+    if (followingIds.length === 0) {
+      return { data: [], total: 0, page, limit };
+    }
+
     const queryBuilder = this.murmursRepository
-      .createQueryBuilder('murmur')
-      .leftJoinAndSelect('murmur.user', 'user')
-      .where('murmur.user_id IN (:...ids)', { ids: followingIds })
-      .orderBy('murmur.created_at', 'DESC')
+      .createQueryBuilder("murmur")
+      .leftJoinAndSelect("murmur.user", "user")
+      .where("murmur.user_id IN (:...ids)", { ids: followingIds })
+      .orderBy("murmur.created_at", "DESC")
       .skip(skip)
       .take(limit);
-    
+
     const [data, total] = await queryBuilder.getManyAndCount();
-    
+
     return { data, total, page, limit };
   }
 }
-
